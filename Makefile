@@ -49,6 +49,9 @@ endif
 ifeq ($(TARGET_CPU), i386)
     TARGET_CPU=x86
 endif
+ifeq ($(TARGET_OS), apple)
+	TARGET_OS=mac
+endif
 export GOOS?=$(shell go env GOOS)
 export GOARCH?=$(shell go env GOARCH)
 export CC=$(TARGET)-gcc -w
@@ -176,7 +179,15 @@ compile_webrtc: check_webrtc_dependencies update_submodule
         use_lld=false \
         use_rtti=true \
         use_sysroot=false"
+
+ifeq ($(shell uname),Darwin)
+	sed -i '' 's| [^ ]*gcc | $(CC) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+	sed -i '' 's| [^ ]*g++ | $(CXX) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+	sed -i '' 's|"ar"|$(TARGET)-ar|g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+else
 	sed -i 's| [^ ]*gcc | $(CC) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
 	sed -i 's| [^ ]*g++ | $(CXX) |g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
 	sed -i 's|"ar"|$(TARGET)-ar|g' ./dep/_google-webrtc/src/out/release-$(TARGET)/toolchain.ninja
+endif
+
 	ninja -C ./dep/_google-webrtc/src/out/release-$(TARGET)
